@@ -1,5 +1,5 @@
 {-# LANGUAGE FunctionalDependencies, FlexibleInstances, GADTs, MultiParamTypeClasses,TemplateHaskell, TypeFamilies #-}
-module Sugoi.SA123N where
+module Sugoi.Types where
 
 import Control.Lens
 import qualified Data.Text as T

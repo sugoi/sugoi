@@ -1,0 +1,7 @@
+#!/bin/sh
+
+while :
+do
+    cabal install
+    inotifywait -e modify --exclude '~$' -r ./SA123N ./exe-src SA123N.cabal
+done

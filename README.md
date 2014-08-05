@@ -1,0 +1,4 @@
+Sugoi Haskell de Optimization!
+======
+
+

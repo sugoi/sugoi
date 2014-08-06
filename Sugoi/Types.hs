@@ -41,11 +41,12 @@ type Breeder e = Deck e -> (MonadOf e) (GeneOf e)
 
 data Farm e = Farm
   { _breeder :: Breeder e
+  , _deck :: Deck e
+  , _score :: BenchmarkOf e -> Double
   , _encoder :: ResumeOf e -> T.Text
   , _decoders :: [T.Text -> Maybe (ResumeOf e)]   
   , _measurement :: GeneOf e -> (MonadOf e) (BenchmarkOf e)
   , _geneBank :: V.Vector (ResumeOf e)
-  , _score :: BenchmarkOf e -> Double
   }
 
 makeClassy ''Farm

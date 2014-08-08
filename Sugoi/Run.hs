@@ -15,7 +15,7 @@ import Data.Vector ((!))
 
 import Sugoi.Types
 
-mainLoop :: forall e m s. (Monad m, MonadIO m, MonadState s m, HasFarm s e m) 
+mainLoop :: forall e m s. (Monad m, MonadIO m, MonadState s m, HasFarm s m) 
   => m ()
 mainLoop = do
   breeder0 <- use breeder
@@ -23,7 +23,7 @@ mainLoop = do
 
   resume1 <- breeder0 deck0
   
-  let gene1 :: GeneOf e
+  let gene1 :: GeneOf m
       gene1 = resume1 ^. gene
 
   hash1 <- hashGene gene1 
@@ -38,8 +38,8 @@ mainLoop = do
 
 
 
-hashGene :: forall e m s. (Monad m, MonadState s m, HasFarm s e m) 
-  => GeneOf e -> m GeneHash
+hashGene :: forall m s. (Monad m, MonadState s m, HasFarm s m) 
+  => GeneOf m -> m GeneHash
 hashGene gene1 = do
   encoder0 <- use encoder
   return $ T.pack $ show $ MD5.md5 $ BS.pack $ T.unpack $ encoder0 gene1                   

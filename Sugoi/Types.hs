@@ -1,4 +1,5 @@
 {-# LANGUAGE  FunctionalDependencies, FlexibleInstances, 
+    KindSignatures,
     GADTs, MultiParamTypeClasses, TemplateHaskell,
     TypeFamilies #-}
 
@@ -15,16 +16,18 @@ import Data.Time
 import System.Locale
 import System.Random
 
-class FarmEnvironment env where
-  type GeneOf env :: *
-  type BenchmarkOf env :: *
 
 type ResumeOf = Resume
 type GeneHash = T.Text
 
-data Resume env = Resume 
-  { _gene :: GeneOf env 
-  , _benchmarks :: [BenchmarkOf env]
+class FarmTypeMembers (m :: * -> *) where
+  type GeneOf m :: *
+  type BenchmarkOf m :: *
+
+
+data Resume m = Resume 
+  { _gene :: GeneOf m
+  , _benchmarks :: [BenchmarkOf m]
   , _birthRecord :: FamilyTree}
 
 data FamilyTree 
@@ -36,23 +39,24 @@ data FamilyTree
 makeClassy ''Resume
 
 
-type Deck e m = m (ResumeOf e)
-type Breeder e m = Deck e m -> m (ResumeOf e)
+type Deck m = m (ResumeOf m)
+type Breeder m = Deck m -> m (ResumeOf m)
 
-data Farm e m = Farm
-  { _breeder :: Breeder e m
-  , _deck :: Deck e m
-  , _score :: BenchmarkOf e -> Double
-  , _encoder :: GeneOf e -> T.Text
-  , _decoders :: [T.Text -> Maybe (GeneOf e)]   
-  , _measurement :: GeneOf e -> m (BenchmarkOf e)
-  , _geneBank :: M.Map GeneHash (ResumeOf e)
+
+data Farm m = Farm
+  { _breeder :: Breeder m
+  , _deck :: Deck m
+  , _score :: BenchmarkOf m -> Double
+  , _encoder :: GeneOf m -> T.Text
+  , _decoders :: [T.Text -> Maybe (GeneOf m)]   
+  , _measurement :: GeneOf m -> m (BenchmarkOf m)
+  , _geneBank :: M.Map GeneHash (ResumeOf m)
   }
   
 
 makeClassy ''Farm
 
-scoreMeanDevi :: Getter (Farm e m) ([BenchmarkOf e] -> (Double,Double))
+scoreMeanDevi :: HasFarm t m => Getter t ([BenchmarkOf m] -> (Double, Double)) 
 scoreMeanDevi = to (\farm0 -> meanDevi . map (farm0 ^.score) )
   where
     meanDevi :: [Double] -> (Double, Double)
@@ -61,14 +65,11 @@ scoreMeanDevi = to (\farm0 -> meanDevi . map (farm0 ^.score) )
             meanX = if n <=0 then 0 else sum xs/n
             deviX = if n <=1 then 1 else sqrt $ sum[(x-meanX)^2| x<-xs] / (n-1)
 
-scoreMean :: Getter (Farm e m) ([BenchmarkOf e] -> Double)
-scoreMean = to (\farm0 -> fst . (farm0 ^.scoreMeanDevi) )
-
-scoreDevi :: Getter (Farm e m) ([BenchmarkOf e] -> Double)
+scoreDevi :: HasFarm t m => Getter t ([BenchmarkOf m] -> Double)
 scoreDevi = to (\farm0 -> snd . (farm0 ^.scoreMeanDevi) )
 
-
-
+scoreMean :: HasFarm t m => Getter t ([BenchmarkOf m] -> Double) 
+scoreMean = undefined
 
   
 randomGeneID :: IO T.Text

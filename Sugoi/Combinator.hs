@@ -15,16 +15,16 @@ import Text.Printf
 
 import Sugoi.Types
 
-thermalDeck ::  forall e m s. (Monad m, MonadIO m, MonadState s m, HasFarm s e m) 
-  => Double -> Deck e m
+thermalDeck ::  forall m s. (Monad m, MonadIO m, MonadState s m, HasFarm s m) 
+  => Double -> Deck m
 thermalDeck temperature0 = do
   bank0 <- use geneBank
   score0 <- use scoreMean 
   let
-      bankVector :: V.Vector (GeneHash, ResumeOf e)  
+      bankVector :: V.Vector (GeneHash, ResumeOf m)  
       bankVector = V.fromList $ M.toList bank0
 
-      scoreOfResume :: ResumeOf e -> Double
+      scoreOfResume :: ResumeOf m -> Double
       scoreOfResume = score0  . _benchmarks 
 
       nB :: Int
@@ -33,10 +33,10 @@ thermalDeck temperature0 = do
       maxScore :: Double
       maxScore = V.maximum $ V.map (scoreOfResume . snd) $ bankVector
 
-      weightFunction :: ResumeOf e -> Double
+      weightFunction :: ResumeOf m -> Double
       weightFunction x =  exp((scoreOfResume x - maxScore)/temperature0)
         
-      weightBank :: V.Vector (ResumeOf e, Double)
+      weightBank :: V.Vector (ResumeOf m, Double)
       weightBank = V.map (\(_,r) -> (r, weightFunction r)) bankVector
       
       pileOfW :: V.Vector Double

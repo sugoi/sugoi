@@ -4,6 +4,7 @@ module Sugoi.Types where
 import Control.Applicative ((<$>))
 import Control.Lens
 import Control.Monad
+import qualified Data.Map as M
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import Data.Char
@@ -11,17 +12,17 @@ import Data.Time
 import System.Locale
 import System.Random
 
-class FarmEnvironment env where
+class FarmEnvironment env | MonadOf env -> env where
   type GeneOf env :: *
   type MonadOf env :: * -> *
   type BenchmarkOf env :: *
 
 type ResumeOf = Resume
 type GeneID = T.Text
+type GeneHash = T.Text
 
 data Resume env = Resume 
-  { _geneID :: GeneID
-  , _gene :: GeneOf env 
+  { _gene :: GeneOf env 
   , _benchmarks :: [BenchmarkOf env]}
 
 randomGeneID :: IO GeneID
@@ -43,10 +44,10 @@ data Farm e = Farm
   { _breeder :: Breeder e
   , _deck :: Deck e
   , _score :: BenchmarkOf e -> Double
-  , _encoder :: ResumeOf e -> T.Text
-  , _decoders :: [T.Text -> Maybe (ResumeOf e)]   
+  , _encoder :: GeneOf e -> T.Text
+  , _decoders :: [T.Text -> Maybe (GeneOf e)]   
   , _measurement :: GeneOf e -> (MonadOf e) (BenchmarkOf e)
-  , _geneBank :: V.Vector (ResumeOf e)
+  , _geneBank :: M.Map GeneHash (ResumeOf e)
   }
 
 makeClassy ''Farm

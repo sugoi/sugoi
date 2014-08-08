@@ -88,15 +88,20 @@ mkBreeder1 deck = do
     p <- liftIO $ randomRIO (0,1)
     if p > frequency 
        then return val
-       else liftIO $ perturbI nAmp val
+       else do
+         diffR <- liftIO $ randomRIO (-nAmp,nAmp)
+         liftIO $ roundR (fromIntegral val + diffR)
+
   return parentResume1{_gene = gene2}
 
 
-perturbI :: Double -> Int -> IO Int
-perturbI amp val = do
-  diffR <- randomRIO (-amp,amp)
-  let diffBody = floor diffR
-      diffCarryR = diffR - fromIntegral diffBody
-  diffCarryP <- randomRIO (0,1)
-  let diffCarry = if diffCarryP > diffCarryR then 0 else 1
-  return $ val + diffBody + diffCarry
+
+-- call it roundR
+-- probablistically round an double-precision value.
+roundR :: Double -> IO Int
+roundR valR = do
+  let valBody = floor valR
+      valCarryR = valR - fromIntegral valBody
+  valCarryP <- randomRIO (0,1)
+  let valCarry = if valCarryP > valCarryR then 0 else 1
+  return $ valBody + valCarry

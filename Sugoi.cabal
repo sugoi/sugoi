@@ -24,14 +24,16 @@ library
   -- other-extensions:    
   build-depends:      
       base >=4.7 && <4.8
+    , bytestring
+    , containers
     , lens
     , text
-    , containers
+    , time
     , transformers
     , mtl
     , random
     , old-locale
-    , time
+    , pureMD5
     , vector
   -- hs-source-dirs:      
   default-language:    Haskell2010

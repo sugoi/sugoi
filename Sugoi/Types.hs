@@ -1,4 +1,7 @@
-{-# LANGUAGE FunctionalDependencies, FlexibleContexts, FlexibleInstances, GADTs, MultiParamTypeClasses,TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE  FunctionalDependencies, FlexibleInstances, 
+    GADTs, MultiParamTypeClasses, TemplateHaskell,
+    TypeFamilies #-}
+
 module Sugoi.Types where
 
 import Control.Applicative ((<$>))
@@ -12,20 +15,40 @@ import Data.Time
 import System.Locale
 import System.Random
 
-class FarmEnvironment env | MonadOf env -> env where
+class FarmEnvironment env where
   type GeneOf env :: *
-  type MonadOf env :: * -> *
   type BenchmarkOf env :: *
 
 type ResumeOf = Resume
-type GeneID = T.Text
 type GeneHash = T.Text
 
 data Resume env = Resume 
   { _gene :: GeneOf env 
-  , _benchmarks :: [BenchmarkOf env]}
+  , _benchmarks :: [BenchmarkOf env]
+  , _birthRecord :: T.Text}
 
-randomGeneID :: IO GeneID
+makeClassy ''Resume
+
+
+type Deck e m = m (ResumeOf e)
+type Breeder e m = Deck e m -> m (ResumeOf e)
+
+data Farm e m = Farm
+  { _breeder :: Breeder e m
+  , _deck :: Deck e m
+  , _score :: BenchmarkOf e -> Double
+  , _encoder :: GeneOf e -> T.Text
+  , _decoders :: [T.Text -> Maybe (GeneOf e)]   
+  , _measurement :: GeneOf e -> m (BenchmarkOf e)
+  , _geneBank :: M.Map GeneHash (ResumeOf e)
+  }
+
+
+
+makeClassy ''Farm
+
+  
+randomGeneID :: IO T.Text
 randomGeneID = do
   utct <- getCurrentTime
   tz <- getTimeZone utct
@@ -36,20 +59,3 @@ randomGeneID = do
     map (saltsrc!!) <$>
     replicateM 4 (randomRIO (0,length saltsrc - 1)) 
   return $ T.pack $ ftstr ++ salt
-
-type Deck e = (MonadOf e) (ResumeOf e)
-type Breeder e = Deck e -> (MonadOf e) (GeneOf e)
-
-data Farm e = Farm
-  { _breeder :: Breeder e
-  , _deck :: Deck e
-  , _score :: BenchmarkOf e -> Double
-  , _encoder :: GeneOf e -> T.Text
-  , _decoders :: [T.Text -> Maybe (GeneOf e)]   
-  , _measurement :: GeneOf e -> (MonadOf e) (BenchmarkOf e)
-  , _geneBank :: M.Map GeneHash (ResumeOf e)
-  }
-
-makeClassy ''Farm
-
-  

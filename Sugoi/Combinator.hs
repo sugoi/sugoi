@@ -1,5 +1,5 @@
 {-# LANGUAGE FunctionalDependencies, FlexibleContexts, FlexibleInstances, GADTs, MultiParamTypeClasses, ScopedTypeVariables, TypeFamilies #-}
-module Sugoi.BreederCombinator where
+module Sugoi.Combinator where
 
 import Control.Applicative ((<|>))
 import Control.Lens

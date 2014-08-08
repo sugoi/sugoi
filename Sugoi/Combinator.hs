@@ -7,6 +7,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.State
 import qualified Data.Text as T
+import qualified Data.Map as M
 import qualified Data.Vector as V
 import Data.Vector ((!))
 import System.Random
@@ -14,21 +15,19 @@ import System.Random
 
 import Sugoi.Types
 
-{-
-mkBreeder1 :: ((Monad (MonadOf e))) => 
-  ((ResumeOf e) -> (MonadOf e) (GeneOf e)) -> Breeder e
-mkBreeder1 prog deck = do
-  return undefined
-
-deck0 ::  forall env m s. (m ~ MonadOf env, Monad m, MonadIO m, MonadState s m, HasFarm s env) 
-  => Deck env
-deck0 = do
+thermalDeck ::  forall e m s. (m ~ MonadOf e, Monad m, MonadIO m, MonadState s m, HasFarm s e) 
+  => Double -> Deck e
+thermalDeck temperature0 = do
   bank0 <- use geneBank
+  score0 <- use scoreMean
   let
-      weightFunction :: ResumeOf env -> Double
-      weightFunction = error "xxx:weightFunction "
+      maxScore :: Double
+      maxScore = maximum $ map score0 $ M.elems bank0
+
+      weightFunction :: ResumeOf e -> Double
+      weightFunction x =  exp((score0 x - maxScore)/temperature)
         
-      wbank :: V.Vector (ResumeOf env, Double)
+      wbank :: V.Vector (ResumeOf e, Double)
       wbank = V.map (\r -> (r, weightFunction r)) bank0
       
       nB :: Int
@@ -44,8 +43,20 @@ deck0 = do
 
   realIdx <- liftIO $ randomRIO (0, sumOfW)
   let i = maybe (nB-1) id $ V.findIndex (> realIdx) pileOfW 
-  return $ bank0!i
+      ret1 = bank0!i
+  return $ ret1 {_birthRecord = FromDataBase }
   
+
+
+
+
+
+
+{-
+mkBreeder1 :: ((Monad (MonadOf e))) => 
+  ((ResumeOf e) -> (MonadOf e) (GeneOf e)) -> Breeder e
+mkBreeder1 prog deck = do
+  return undefined
 
             
 

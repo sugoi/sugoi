@@ -25,7 +25,13 @@ type GeneHash = T.Text
 data Resume env = Resume 
   { _gene :: GeneOf env 
   , _benchmarks :: [BenchmarkOf env]
-  , _birthRecord :: T.Text}
+  , _birthRecord :: FamilyTree}
+
+data FamilyTree 
+ = FromDatabase GeneHash
+ | DrawnBy T.Text FamilyTree
+ | BredBy T.Text [FamilyTree]
+ 
 
 makeClassy ''Resume
 
@@ -36,7 +42,8 @@ type Breeder e m = Deck e m -> m (ResumeOf e)
 data Farm e m = Farm
   { _breeder :: Breeder e m
   , _deck :: Deck e m
-  , _score :: BenchmarkOf e -> Double
+  , _scoreMean :: BenchmarkOf e -> Double
+  , _scoreDevi :: BenchmarkOf e -> Double
   , _encoder :: GeneOf e -> T.Text
   , _decoders :: [T.Text -> Maybe (GeneOf e)]   
   , _measurement :: GeneOf e -> m (BenchmarkOf e)

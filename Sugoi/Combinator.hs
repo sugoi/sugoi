@@ -11,31 +11,37 @@ import qualified Data.Map as M
 import qualified Data.Vector as V
 import Data.Vector ((!))
 import System.Random
-
+import Text.Printf
 
 import Sugoi.Types
 
-thermalDeck ::  forall e m s. (m ~ MonadOf e, Monad m, MonadIO m, MonadState s m, HasFarm s e) 
-  => Double -> Deck e
+thermalDeck ::  forall e m s. (Monad m, MonadIO m, MonadState s m, HasFarm s e m) 
+  => Double -> Deck e m
 thermalDeck temperature0 = do
   bank0 <- use geneBank
-  score0 <- use scoreMean
+  score0 <- use scoreMean 
   let
+      bankVector :: V.Vector (GeneHash, ResumeOf e)  
+      bankVector = V.fromList $ M.toList bank0
+
+      scoreOfResume :: ResumeOf e -> Double
+      scoreOfResume = score0  . _benchmarks 
+
+      nB :: Int
+      nB = V.length bankVector
+
       maxScore :: Double
-      maxScore = maximum $ map score0 $ M.elems bank0
+      maxScore = V.maximum $ V.map (scoreOfResume . snd) $ bankVector
 
       weightFunction :: ResumeOf e -> Double
-      weightFunction x =  exp((score0 x - maxScore)/temperature)
+      weightFunction x =  exp((scoreOfResume x - maxScore)/temperature0)
         
-      wbank :: V.Vector (ResumeOf e, Double)
-      wbank = V.map (\r -> (r, weightFunction r)) bank0
-      
-      nB :: Int
-      nB = V.length bank0
+      weightBank :: V.Vector (ResumeOf e, Double)
+      weightBank = V.map (\(_,r) -> (r, weightFunction r)) bankVector
       
       pileOfW :: V.Vector Double
       pileOfW = V.generate nB $ \i ->
-        (snd $ wbank!i) + (if i == 0 then 0 else pileOfW ! (i-1))
+        (snd $ weightBank!i) + (if i == 0 then 0 else pileOfW ! (i-1))
       
       sumOfW :: Double
       sumOfW = V.last pileOfW 
@@ -43,10 +49,10 @@ thermalDeck temperature0 = do
 
   realIdx <- liftIO $ randomRIO (0, sumOfW)
   let i = maybe (nB-1) id $ V.findIndex (> realIdx) pileOfW 
-      ret1 = bank0!i
-  return $ ret1 {_birthRecord = FromDataBase }
+      (hash1,ret1) = bankVector ! i
+      logStr = T.pack $ printf "Temperature %f"                  
+  return $ ret1 {_birthRecord = DrawnBy logStr $ FromDatabase hash1}
   
-
 
 
 

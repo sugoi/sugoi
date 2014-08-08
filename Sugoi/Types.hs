@@ -69,8 +69,7 @@ scoreDevi :: HasFarm t m => Getter t ([BenchmarkOf m] -> Double)
 scoreDevi = to (\farm0 -> snd . (farm0 ^.scoreMeanDevi) )
 
 scoreMean :: HasFarm t m => Getter t ([BenchmarkOf m] -> Double) 
-scoreMean = undefined
-
+scoreMean = to (\farm0 -> fst . (farm0 ^.scoreMeanDevi) )
   
 randomGeneID :: IO T.Text
 randomGeneID = do

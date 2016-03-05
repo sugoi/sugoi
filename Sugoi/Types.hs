@@ -1,4 +1,4 @@
-{-# LANGUAGE  FunctionalDependencies, FlexibleInstances, 
+{-# LANGUAGE  FunctionalDependencies, FlexibleInstances,
     KindSignatures,
     GADTs, MultiParamTypeClasses, TemplateHaskell,
     TypeFamilies #-}
@@ -13,7 +13,7 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 import Data.Char
 import Data.Time
-import System.Locale
+import System.Locale hiding (defaultTimeLocale)
 import System.Random
 
 
@@ -25,16 +25,16 @@ class FarmTypeMembers (m :: * -> *) where
   type BenchmarkOf m :: *
 
 
-data Resume m = Resume 
+data Resume m = Resume
   { _gene :: GeneOf m
   , _benchmarks :: [BenchmarkOf m]
   , _birthRecord :: FamilyTree}
 
-data FamilyTree 
+data FamilyTree
  = FromDatabase GeneHash
  | DrawnBy T.Text FamilyTree
  | BredBy T.Text [FamilyTree]
- 
+
 
 makeClassy ''Resume
 
@@ -48,15 +48,15 @@ data Farm m = Farm
   , _deck :: Deck m
   , _score :: BenchmarkOf m -> Double
   , _encoder :: GeneOf m -> T.Text
-  , _decoders :: [T.Text -> Maybe (GeneOf m)]   
+  , _decoders :: [T.Text -> Maybe (GeneOf m)]
   , _measurement :: GeneOf m -> m (BenchmarkOf m)
   , _geneBank :: M.Map GeneHash (ResumeOf m)
   }
-  
+
 
 makeClassy ''Farm
 
-scoreMeanDevi :: HasFarm t m => Getter t ([BenchmarkOf m] -> (Double, Double)) 
+scoreMeanDevi :: HasFarm t m => Getter t ([BenchmarkOf m] -> (Double, Double))
 scoreMeanDevi = to (\farm0 -> meanDevi . map (farm0 ^.score) )
   where
     meanDevi :: [Double] -> (Double, Double)
@@ -68,9 +68,9 @@ scoreMeanDevi = to (\farm0 -> meanDevi . map (farm0 ^.score) )
 scoreDevi :: HasFarm t m => Getter t ([BenchmarkOf m] -> Double)
 scoreDevi = to (\farm0 -> snd . (farm0 ^.scoreMeanDevi) )
 
-scoreMean :: HasFarm t m => Getter t ([BenchmarkOf m] -> Double) 
+scoreMean :: HasFarm t m => Getter t ([BenchmarkOf m] -> Double)
 scoreMean = to (\farm0 -> fst . (farm0 ^.scoreMeanDevi) )
-  
+
 randomGeneID :: IO T.Text
 randomGeneID = do
   utct <- getCurrentTime
@@ -78,7 +78,7 @@ randomGeneID = do
   let lt = utcToZonedTime tz utct
       ftstr = formatTime defaultTimeLocale "%z.%Y.%m%d.%H%M.%S" lt
       saltsrc = ['0'..'9']++['A'..'Z']++['a'..'z']
-  salt <- 
+  salt <-
     map (saltsrc!!) <$>
-    replicateM 4 (randomRIO (0,length saltsrc - 1)) 
+    replicateM 4 (randomRIO (0,length saltsrc - 1))
   return $ T.pack $ ftstr ++ salt
